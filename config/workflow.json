@@ -1,0 +1,82 @@
+{
+  "name": "CubanJobsBot - Job Scraper",
+  "description": "Automated job scraping bot for Cuban job sites",
+  "version": "1.0.0",
+  "trigger": {
+    "app": "telegram",
+    "event": "new_message",
+    "config": {
+      "bot_token": "{{env.TELEGRAM_BOT_TOKEN}}",
+      "chat_filter": "private",
+      "message_filter": "Ofertas"
+    }
+  },
+  "steps": [
+    {
+      "id": "scrape_revolico",
+      "app": "webhooks",
+      "action": "get",
+      "config": {
+        "url": "https://www.revolico.com/search?category=empleos&subcategory=ofertas-de-empleo",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (compatible; JobBot/1.0)"
+        }
+      }
+    },
+    {
+      "id": "scrape_cubisima_marketing", 
+      "app": "webhooks",
+      "action": "get",
+      "config": {
+        "url": "https://www.cubisima.com/empleos/ofertas/marketing?categoriaestricta"
+      }
+    },
+    {
+      "id": "scrape_cubisima_design",
+      "app": "webhooks", 
+      "action": "get",
+      "config": {
+        "url": "https://www.cubisima.com/empleos/ofertas/diseno?categoriaestricta"
+      }
+    },
+    {
+      "id": "scrape_cubisima_it",
+      "app": "webhooks",
+      "action": "get", 
+      "config": {
+        "url": "https://www.cubisima.com/empleos/ofertas/informatica-Cibernetica?categoriaestricta"
+      }
+    },
+    {
+      "id": "scrape_cucoders",
+      "app": "webhooks",
+      "action": "get",
+      "config": {
+        "url": "https://cucoders.dev/empleos/"
+      }
+    },
+    {
+      "id": "process_data",
+      "app": "code",
+      "action": "python",
+      "config": {
+        "code": "# Ver código en workflow-configuration.md"
+      }
+    },
+    {
+      "id": "send_telegram_message",
+      "app": "telegram",
+      "action": "send_message",
+      "config": {
+        "chat_id": "{{trigger.chat.id}}",
+        "text": "{{steps.process_data.formatted_message}}",
+        "parse_mode": "HTML"
+      }
+    }
+  ],
+  "settings": {
+    "timezone": "America/Havana",
+    "error_handling": "continue",
+    "retry_attempts": 3
+  }
+}

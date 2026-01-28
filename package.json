@@ -1,0 +1,61 @@
+{
+  "name": "cuban-jobs-bot",
+  "version": "1.0.0",
+  "description": "Automated Telegram bot for Cuban job opportunities",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
+    "build": "webpack --mode production",
+    "deploy": "echo 'Deploy to production'",
+    "validate": "echo 'Validate configuration'"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "jobs",
+    "cuba",
+    "automation",
+    "scraping"
+  ],
+  "author": {
+    "name": "Charly Rodriguez",
+    "email": "charlyia2026@gmail.com",
+    "url": "https://github.com/charliAI"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/charliAI/CubanJobsBot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/charliAI/CubanJobsBot/issues"
+  },
+  "homepage": "https://github.com/charliAI/CubanJobsBot#readme",
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "nodemon": "^2.0.20",
+    "eslint": "^8.0.0",
+    "prettier": "^2.8.0",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^4.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.0.0",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.0.0",
+    "moment": "^2.29.0",
+    "node-telegram-bot-api": "^0.61.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "version": "1.0.0"
+}
