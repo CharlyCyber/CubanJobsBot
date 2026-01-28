@@ -35,17 +35,19 @@ function escapeHTML(str) {
 async function sendAggregatedOffers(chatId, jobs) {
     if (!bot) return;
 
-    let header = `<b>🚀 ¡He encontrado ${jobs.length} ofertas para ti!</b>\n\n`;
+    const dateStr = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    let header = `<b>OFERTAS LABORALES - ${dateStr}</b>\n\n`;
     let currentMessage = header;
     const MAX_LENGTH = 4000;
 
     for (let i = 0; i < jobs.length; i++) {
         const job = jobs[i];
         const title = escapeHTML(job.title);
-        const source = escapeHTML(job.source);
+        const company = escapeHTML(job.company || 'No especificada');
+        const description = escapeHTML(job.description.substring(0, 200));
         const link = escapeHTML(job.link);
 
-        const jobEntry = `🔹 <b>${title}</b>\n🏢 <i>${source}</i>\n🔗 <a href="${link}">Ver oferta</a>\n\n`;
+        const jobEntry = `🔹 <b>${title}</b>\n🏢 <b>Empresa:</b> ${company}\n📝 ${description}\n🔗 ${link}\n\n---\n\n`;
 
         if ((currentMessage + jobEntry).length > MAX_LENGTH) {
             await bot.sendMessage(chatId, currentMessage, { parse_mode: 'HTML', disable_web_page_preview: true });
@@ -56,6 +58,10 @@ async function sendAggregatedOffers(chatId, jobs) {
     }
 
     if (currentMessage.length > 0) {
+        // Remove the last separator
+        if (currentMessage.endsWith('\n\n---\n\n')) {
+            currentMessage = currentMessage.slice(0, -9);
+        }
         await bot.sendMessage(chatId, currentMessage, { parse_mode: 'HTML', disable_web_page_preview: true });
     }
 }
