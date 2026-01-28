@@ -2,6 +2,16 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const config = require('../config');
 
+// Helper to format location for Cubisima URL
+function formatLocation(location) {
+    if (!location) return 'cuba';
+    return location
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+        .replace(/,/g, '')
+        .replace(/\s+/g, '-');
+}
+
 async function scrapeCategory(url, categoryName) {
     try {
         const response = await axios.get(url, {
@@ -13,23 +23,29 @@ async function scrapeCategory(url, categoryName) {
         const $ = cheerio.load(response.data);
         const jobs = [];
 
-        // Cubisima often uses specific patterns for job links
-        // Looking for links that contain "oferta" and have a title-like text
-        $('a').each((i, el) => {
-            const title = $(el).text().trim();
-            const link = $(el).attr('href');
+        $('.card.job-listing').each((i, el) => {
+            const id = $(el).attr('id');
+            const title = $(el).find('.card-title').text().trim();
+            const dateStr = $(el).find('.card-body p:first-child').text().trim();
+            const location = $(el).find('.card-body p:nth-child(2)').text().trim();
 
-            if (link && (link.includes('/empleos/oferta') || link.includes('!3.htm') || link.includes('!2.htm'))) {
-                // Avoid generic links like "Publicar" or "Buscar"
-                if (title && title.length > 10 && !title.includes('Publicar') && !title.includes('Buscar')) {
-                    jobs.push({
-                        title,
-                        description: '',
-                        link: link.startsWith('http') ? link : `https://www.cubisima.com${link}`,
-                        date: new Date().toISOString(),
-                        source: `Cubisima (${categoryName})`
-                    });
-                }
+            if (id && title) {
+                const formattedLoc = formatLocation(location);
+                // Pattern: https://www.cubisima.com/empleos/ofertas/[categoria]/[municipio-provincia]/[id]
+                // We need to extract the category from the URL or mapping
+                let categoryPath = 'marketing';
+                if (url.includes('diseno')) categoryPath = 'diseno';
+                if (url.includes('informatica')) categoryPath = 'informatica-Cibernetica';
+
+                const link = `https://www.cubisima.com/empleos/ofertas/${categoryPath}/${formattedLoc}/${id}`;
+
+                jobs.push({
+                    title,
+                    description: `Ubicación: ${location}`,
+                    link,
+                    date: dateStr,
+                    source: `Cubisima (${categoryName})`
+                });
             }
         });
 
