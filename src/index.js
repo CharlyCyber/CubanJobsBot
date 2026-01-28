@@ -4,7 +4,7 @@ const scrapeRevolico = require('./scrapers/revolico');
 const scrapeCubisima = require('./scrapers/cubisima');
 const scrapeCuCoders = require('./scrapers/cucoders');
 const { filterJobs } = require('./services/filterService');
-const { initBot, sendJobOffer } = require('./services/telegramService');
+const { initBot, sendAggregatedOffers, sendMessage } = require('./services/telegramService');
 
 // Simple HTTP server for Render health checks
 const server = http.createServer((req, res) => {
@@ -17,8 +17,10 @@ server.listen(PORT, () => {
     console.log(`🌍 Health check server listening on port ${PORT}`);
 });
 
-async function runBotCycle() {
-    console.log(`\n--- 🕒 Starting bot cycle at ${new Date().toLocaleString()} ---`);
+async function runBotCycle(chatId) {
+    console.log(`\n--- 🕒 Triggered cycle for chat ${chatId} at ${new Date().toLocaleString()} ---`);
+
+    await sendMessage(chatId, '🔎 Buscando ofertas laborales actuales... por favor espera.');
 
     try {
         console.log('⏳ Scraping Revolico...');
@@ -36,23 +38,22 @@ async function runBotCycle() {
         const filteredJobs = filterJobs(allJobs);
         console.log(`🎯 ${filteredJobs.length} jobs matched criteria.`);
 
-        for (const job of filteredJobs) {
-            await sendJobOffer(job);
+        if (filteredJobs.length === 0) {
+            await sendMessage(chatId, '📭 No se encontraron nuevas ofertas que coincidan con tus filtros en las últimas 48h.');
+        } else {
+            // Send all offers in aggregated messages
+            await sendAggregatedOffers(chatId, filteredJobs);
         }
 
         console.log('🏁 Cycle completed.');
 
     } catch (error) {
         console.error('❌ Error in bot cycle:', error);
+        await sendMessage(chatId, '❌ Ocurrió un error al buscar las ofertas. Inténtalo más tarde.');
     }
 }
 
-// Initialize bot
-initBot();
+// Initialize bot with the callback
+initBot(runBotCycle);
 
-// Run immediately on start
-runBotCycle();
-
-// Schedule to run every X minutes (default 30 min if not set)
-const intervalMinutes = parseInt(process.env.POLLING_INTERVAL_MINUTES || '30', 10);
-setInterval(runBotCycle, intervalMinutes * 60 * 1000);
+console.log('🤖 CubanJobsBot is active and waiting for "Ofertas" command...');
