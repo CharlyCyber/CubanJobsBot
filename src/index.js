@@ -1,3 +1,4 @@
+const http = require('http');
 const config = require('./config');
 const scrapeRevolico = require('./scrapers/revolico');
 const scrapeCubisima = require('./scrapers/cubisima');
@@ -5,10 +6,19 @@ const scrapeCuCoders = require('./scrapers/cucoders');
 const { filterJobs } = require('./services/filterService');
 const { initBot, sendJobOffer } = require('./services/telegramService');
 
-async function main() {
-    console.log('🤖 CubanJobsBot started...');
+// Simple HTTP server for Render health checks
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('CubanJobsBot is running!\n');
+});
 
-    initBot();
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`🌍 Health check server listening on port ${PORT}`);
+});
+
+async function runBotCycle() {
+    console.log(`\n--- 🕒 Starting bot cycle at ${new Date().toLocaleString()} ---`);
 
     try {
         console.log('⏳ Scraping Revolico...');
@@ -33,12 +43,16 @@ async function main() {
         console.log('🏁 Cycle completed.');
 
     } catch (error) {
-        console.error('❌ specific error in main loop:', error);
+        console.error('❌ Error in bot cycle:', error);
     }
 }
 
-// Run immediately
-main();
+// Initialize bot
+initBot();
 
-// Optional: Schedule to run every X hours if kept alive
-// setInterval(main, config.monitoring.requestDelay * 1000); 
+// Run immediately on start
+runBotCycle();
+
+// Schedule to run every X minutes (default 30 min if not set)
+const intervalMinutes = parseInt(process.env.POLLING_INTERVAL_MINUTES || '30', 10);
+setInterval(runBotCycle, intervalMinutes * 60 * 1000);

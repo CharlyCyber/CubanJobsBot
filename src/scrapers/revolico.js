@@ -4,29 +4,39 @@ const config = require('../config');
 
 async function scrapeRevolico() {
     try {
+        // Mimic a real browser more closely
         const response = await axios.get(config.scraping.urls.revolico, {
-            headers: { 'User-Agent': config.scraping.userAgent }
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Cache-Control': 'max-age=0'
+            }
         });
+
         const $ = cheerio.load(response.data);
         const jobs = [];
 
-        // Note: Selectors need to be verified against the actual site structure.
-        // Using generic selectors based on common Revolico structure for now.
-        $('li[data-cy="ad-row"]').each((i, el) => {
-            const title = $(el).find('a[data-cy="ad-title"]').text().trim();
-            const link = 'https://www.revolico.com' + $(el).find('a[data-cy="ad-title"]').attr('href');
-            const description = $(el).find('div[data-cy="ad-description"]').text().trim(); // Hypothetical selector
+        // Selectors based on common Revolico structure
+        // Using a more flexible approach to find listings
+        $('li').each((i, el) => {
+            const titleEl = $(el).find('h5, h2, a[data-cy="ad-title"]');
+            const title = titleEl.text().trim();
+            const link = titleEl.is('a') ? titleEl.attr('href') : titleEl.find('a').attr('href');
 
-            // Revolico dates are often relative strings like "hace 2 horas", needing parsing.
-            // For simplicity in this initial version, we'll capture the raw string.
-            const dateStr = $(el).find('time').text().trim();
-
-            if (title && link) {
+            if (title && link && (link.includes('/empleos/') || link.includes('/ofertas-de-empleo/'))) {
                 jobs.push({
                     title,
-                    description,
-                    link,
-                    date: dateStr, // Needs normalization in filter service if possible
+                    description: $(el).find('p, span').first().text().trim(),
+                    link: link.startsWith('http') ? link : `https://www.revolico.com${link}`,
+                    date: new Date().toISOString(),
                     source: 'Revolico'
                 });
             }
@@ -34,7 +44,11 @@ async function scrapeRevolico() {
 
         return jobs;
     } catch (error) {
-        console.error('Error scraping Revolico:', error.message);
+        if (error.response && error.response.status === 403) {
+            console.error('❌ Revolico blocked access (403). Zapier might use specialized proxies or headless browsers.');
+        } else {
+            console.error('Error scraping Revolico:', error.message);
+        }
         return [];
     }
 }

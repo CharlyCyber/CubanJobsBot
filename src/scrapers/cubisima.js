@@ -10,19 +10,17 @@ async function scrapeCategory(url, categoryName) {
         const $ = cheerio.load(response.data);
         const jobs = [];
 
-        // Cubisima structure (hypothetical, needs adjustment based on real site)
-        $('.card-anuncio').each((i, el) => {
-            const title = $(el).find('.titulo-anuncio').text().trim();
-            const link = $(el).find('a').attr('href'); // Might be relative
-            const description = $(el).find('.descripcion-anuncio').text().trim();
-            const dateStr = $(el).find('.fecha').text().trim();
+        // Real Cubisima structure based on research
+        $('a').each((i, el) => {
+            const title = $(el).text().trim();
+            const link = $(el).attr('href');
 
-            if (title && link) {
+            if (title && title.length > 10 && link && (link.includes('ofertas') || link.includes('empleos'))) {
                 jobs.push({
                     title,
-                    description,
+                    description: '',
                     link: link.startsWith('http') ? link : `https://www.cubisima.com${link}`,
-                    date: dateStr,
+                    date: new Date().toISOString(),
                     source: `Cubisima (${categoryName})`
                 });
             }

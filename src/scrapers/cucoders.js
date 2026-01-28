@@ -10,19 +10,19 @@ async function scrapeCuCoders() {
         const $ = cheerio.load(response.data);
         const jobs = [];
 
-        // CuCoders structure (hypothetical)
-        $('.job-card').each((i, el) => {
-            const title = $(el).find('.job-title').text().trim();
-            const link = 'https://cucoders.dev' + $(el).find('a').attr('href');
-            const description = $(el).find('.job-description').text().trim();
-            const dateStr = $(el).find('.job-date').text().trim();
+        // Real CuCoders structure based on research
+        $('a[href*="/empleos/202"]').each((i, el) => {
+            const title = $(el).text().trim();
+            const link = 'https://cucoders.dev' + $(el).attr('href');
+            // Description is often in the next element or parent
+            const description = $(el).closest('div').text().trim();
 
-            if (title && link) {
+            if (title && title.length > 5 && link) {
                 jobs.push({
                     title,
                     description,
                     link,
-                    date: dateStr,
+                    date: new Date().toISOString(), // CuCoders has date in URL usually
                     source: 'CuCoders'
                 });
             }
